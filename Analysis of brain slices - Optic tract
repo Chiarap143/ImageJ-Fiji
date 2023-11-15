@@ -1,0 +1,135 @@
+
+fname = File.name;
+
+run("Misc...", "divide=0.0");
+setOption("BlackBackground", true);
+setOption("DebugMode", true);
+run("Misc...", "divide=0.0");
+run("Clear Results");
+
+makeRectangle(0, 0, 400, 400);
+waitForUser("move the square selection to the desired position");
+
+roiManager("add");
+
+
+run("Duplicate...", "duplicate");
+rename("S1");
+
+run("Select All");
+run("Measure");
+roiManager("Delete");
+
+selectWindow("S1");
+run("Split Channels");
+
+//clean noise from both channels then align the channels
+//tau ch=1
+selectWindow("C1-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+//remove noise from GFP channel
+selectWindow("C2-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+selectWindow("C3-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+run("Merge Channels...", "c1=C1-S1 c2=C2-S1 c3=C3-S1 create");
+
+//run("Linear Stack Alignment with SIFT MultiChannel", "registration_channel=1 initial_gaussian_blur=1.60 steps_per_scale_octave=3 minimum_image_size=64 maximum_image_size=1024 feature_descriptor_size=4 feature_descriptor_orientation_bins=8 closest/next_closest_ratio=0.92 maximal_alignment_error=5 inlier_ratio=0.05 expected_transformation=Translation interpolate");
+rename("S1-Aligned-");
+
+run("Duplicate...", "duplicate channels=1");
+rename("Tau13 -");
+run("Duplicate...", "duplicate");
+run("Auto Threshold", "method=Otsu white show stack");//more stringent
+
+rename("Tau13-mask");
+
+
+//create mask for eGFP channel (C2)
+selectWindow("S1-Aligned-");
+run("Duplicate...", "duplicate channels=2");
+rename("eGFP -");
+run("Duplicate...", "duplicate");
+run("Auto Threshold", "method=Otsu white show stack");//less stringent --> only tau that is actually out of GFP, avoid borders
+rename("eGFP-mask");
+
+
+//measure area and intensity of GFP
+selectWindow("eGFP -");
+
+run("Duplicate...", "duplicate");
+rename("eGFP-area");
+
+selectWindow("eGFP-mask");
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	//run("Enlarge...", "enlarge=1");
+    
+    	roiManager("add");   
+    	run("Fill", "slice");
+	}
+roiManager("Deselect");
+selectWindow("eGFP-area");
+roiManager("Measure");
+
+
+//waitForUser("Select the Tau 13 image");
+selectWindow("Tau13 -");
+run("Duplicate...", "duplicate");
+rename("Tau13 in GFP domain");
+
+selectWindow("Tau13 in GFP domain");
+roiManager("Measure");
+roiManager("Delete");
+
+
+
+selectWindow("Tau13 -");
+run("Duplicate...", "duplicate");
+
+rename("Tau13-area");
+
+
+//create selection on tau mask and measure signal
+selectWindow("Tau13-mask");
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	roiManager("add");   
+	}
+roiManager("Deselect");
+selectWindow("Tau13-area");
+roiManager("Measure");
+
+roiManager("Delete");
+
+selectWindow("Tau13-mask");
+saveAs("Tiff", "---/Analysis/In vivo/Images analysed_/1-Tau13-mask OT -"+fname);
+
+selectWindow("eGFP-mask");
+saveAs("Tiff", "---/Analysis/In vivo/Images analysed_/1-eGFP-mask OT -"+fname);
+
+
+//save all original channels
+selectWindow("S1-Aligned-");
+saveAs("Tiff", "---/Analysis/In vivo/Images analysed_/1-Square OT -"+fname);
+
+selectWindow("Tau13 -");
+saveAs("Tiff", "---/Analysis/In vivo/Images analysed_/1-Tau13 OT -"+fname);
+
+selectWindow("eGFP -");
+saveAs("Tiff", "---/Analysis/In vivo/Images analysed_/1-eGFP OT -"+fname);
+
+
+
+run("Close All");
