@@ -1,0 +1,226 @@
+/*Analysis to determine whethere there is transfer or not of hTau in the brain (SC or LGN). Separate channels, remove noise, check the % of coloc between the 2 hTau channels, 
+ * coloc hTau with GFP, hTau - GFP --> signal?
+ * 
+ * Ch1 = 647 --> Tau13
+ * Ch2 = eGFP-488
+ * Ch3 = clSNAP25-555 (not in all images, CHECK before)
+ * Ch4 = DAPI (not in all images, CHECK before)
+ * 
+ * Divide the image of the colliculus in 1 square --> analyse the square (Tau area, Tau - eGFP area, GFP area)
+ * all planes analysed, then values taken only for central 10 z planes (z7-z16)
+ * 
+ * SUPERIOR COLLICULUS
+ * 
+ * 
+ */
+
+
+fname = File.name;
+
+run("Misc...", "divide=0.0");
+setOption("BlackBackground", true);
+setOption("DebugMode", true);
+run("Misc...", "divide=0.0");
+run("Clear Results");
+
+
+//rename("Original");
+
+makeRectangle(0, 0, 636, 636);
+waitForUser("move the square selection to the desired position");
+
+roiManager("add");
+
+
+run("Duplicate...", "duplicate");
+rename("S1");
+
+run("Select All");
+run("Measure");
+roiManager("Delete");
+
+selectWindow("S1");
+run("Split Channels");
+
+//clean noise from both channels then align the channels
+//tau ch=1
+selectWindow("C1-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+//remove noise from GFP channel
+selectWindow("C2-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+selectWindow("C3-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+
+//CLEAN CHANNEL 4 IF YOU ALSO HAVE CL.SNAP25 AND DAPI
+selectWindow("C4-S1");
+run("Median...", "radius=2 stack");
+run("Despeckle", "stack");
+run("Subtract Background...", "rolling=20 disable stack");
+
+
+
+//merge channels to align them to channel 1
+//run("Merge Channels...", "c1=C1-S1 c2=C2-S1 c3=C3-S1 create");
+//USE THE MERGE BELOW IF YOU ALSO HAVE CL.SNAP25 AND DAPI
+run("Merge Channels...", "c1=C1-S1 c2=C2-S1 c3=C3-S1 c4=C4-S1 create");
+
+//silence alignement if you see the images shifted too much - mostly if in the Zs analysed (z7-z16)
+run("Linear Stack Alignment with SIFT MultiChannel", "registration_channel=1 initial_gaussian_blur=1.60 steps_per_scale_octave=3 minimum_image_size=64 maximum_image_size=1024 feature_descriptor_size=4 feature_descriptor_orientation_bins=8 closest/next_closest_ratio=0.92 maximal_alignment_error=5 inlier_ratio=0.05 expected_transformation=Translation interpolate");
+rename("S1-Aligned-");
+
+
+//create Tau13 mask
+run("Duplicate...", "duplicate channels=1");
+rename("Tau13 -");
+run("Duplicate...", "duplicate");
+run("Auto Threshold", "method=Otsu white show stack");//more stringent
+
+rename("Tau13-mask");
+
+
+//create mask for eGFP channel (C2)
+selectWindow("S1-Aligned-");
+run("Duplicate...", "duplicate channels=2");
+rename("eGFP -");
+run("Duplicate...", "duplicate");
+run("Auto Threshold", "method=Otsu white show stack");//less stringent --> only tau that is actually out of GFP, avoid borders
+rename("eGFP-mask");
+
+//measure area and intensity of GFP
+selectWindow("eGFP -");
+
+run("Duplicate...", "duplicate");
+rename("eGFP-area");
+
+selectWindow("eGFP-mask");
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	run("Enlarge...", "enlarge=1");
+    
+    	roiManager("add");   
+    	run("Fill", "slice");
+	}
+roiManager("Deselect");
+selectWindow("eGFP-area");
+roiManager("Measure");
+//roiManager("Deselect");
+waitForUser("save ROI");
+//roiManager("save", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed /1- ROI eGFP -.zip" +fname);
+roiManager("Delete");
+
+selectWindow("eGFP-mask");
+run("Duplicate...", "duplicate");
+run("Convert to Mask", "method=Default background=Default black create");
+run("Invert", "stack");
+run("Divide...", "value=255.0000 stack");
+rename("eGFP-mask-Inverted");
+
+
+selectWindow("S1-Aligned-");
+run("Duplicate...", "duplicate channels=1");
+selectWindow("Tau13 -");
+run("Duplicate...", "duplicate");
+rename("Tau13-area");
+
+
+//create selection on tau mask and measure signal
+selectWindow("Tau13-mask");
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	roiManager("add");   
+	}
+roiManager("Deselect");
+selectWindow("Tau13-area");
+roiManager("Measure");
+//roiManager("Deselect");
+//roiManager("Save", "/Users/chiarapanzi/Dropbox (UK Dementia Research Institute)/Schiavo Lab/Chiara/Fiji/in vivo/RoiSet.zip"+list[i]);
+waitForUser("save ROI");
+//roiManager("save", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed /1 - ROI Tau13 -.zip" +fname);
+roiManager("Delete");
+
+
+
+
+// CHECK!!! Selections at the end are not correct --> out of the signal of tau in the original image
+
+imageCalculator("Subtract create stack", "Tau13-mask","eGFP-mask");
+selectImage("Result of Tau13-mask");
+rename("Tau-GFP-subtract");
+
+
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	roiManager("add");   
+	}
+	roiManager("Deselect");
+	selectWindow("Tau13 -");
+	run("Duplicate...", "duplicate");
+	rename("Tau13-eGFP -");
+	roiManager("Measure");
+	waitForUser("save ROI");
+//roiManager("save", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed /1- ROI Tau13-eGFP -.zip");
+roiManager("Delete");
+
+
+/*
+imageCalculator("Subtract create stack", "Tau13-mask","eGFP-mask");
+selectImage("Result of Tau13-mask");
+rename("Tau-GFP-subtract");
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	roiManager("add");   
+	}
+	roiManager("Deselect");
+	selectWindow("Tau13 -" +fname);
+	run("Duplicate...", "duplicate");
+	rename("Tau13-eGFP -" +fname);
+	roiManager("Measure");
+	roiManager("Deselect");
+
+
+*/
+
+ //save masks tau - eGFP
+selectWindow("Tau13-mask");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13-mask -"+fname);
+
+selectWindow("eGFP-mask");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-eGFP-mask -"+fname);
+
+selectWindow("eGFP-mask-Inverted");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-eGFP-mask-Inverted -"+fname);
+
+
+//save all original channels
+selectWindow("S1-Aligned-");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Square -"+fname);
+
+selectWindow("Tau13 -");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13 -"+fname);
+
+selectWindow("eGFP -");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-eGFP -"+fname);
+
+//save tau channel after multiplication
+selectWindow("Tau-GFP-subtract");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13-eGFP - subtraction -"+fname);
+
+selectWindow("Tau13-eGFP -");
+saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13-eGFP -"+fname);
+
+
+run("Close All");
