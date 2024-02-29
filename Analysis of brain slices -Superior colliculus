@@ -150,9 +150,7 @@ roiManager("Deselect");
 selectWindow("Tau13-area");
 roiManager("Measure");
 //roiManager("Deselect");
-//roiManager("Save", "/Users/chiarapanzi/Dropbox (UK Dementia Research Institute)/Schiavo Lab/Chiara/Fiji/in vivo/RoiSet.zip"+list[i]);
 waitForUser("save ROI");
-//roiManager("save", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed /1 - ROI Tau13 -.zip" +fname);
 roiManager("Delete");
 
 
@@ -176,56 +174,36 @@ for (n = 1; n <= nSlices; n++) {
 	rename("Tau13-eGFP -");
 	roiManager("Measure");
 	waitForUser("save ROI");
-//roiManager("save", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed /1- ROI Tau13-eGFP -.zip");
-roiManager("Delete");
+	roiManager("Delete");
 
-
-/*
-imageCalculator("Subtract create stack", "Tau13-mask","eGFP-mask");
-selectImage("Result of Tau13-mask");
-rename("Tau-GFP-subtract");
-for (n = 1; n <= nSlices; n++) {
-    	setSlice(n);
-    	run("Create Selection");
-    	roiManager("add");   
-	}
-	roiManager("Deselect");
-	selectWindow("Tau13 -" +fname);
-	run("Duplicate...", "duplicate");
-	rename("Tau13-eGFP -" +fname);
-	roiManager("Measure");
-	roiManager("Deselect");
-
-
-*/
 
  //save masks tau - eGFP
 selectWindow("Tau13-mask");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13-mask -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-Tau13-mask -"+fname);
 
 selectWindow("eGFP-mask");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-eGFP-mask -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-eGFP-mask -"+fname);
 
 selectWindow("eGFP-mask-Inverted");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-eGFP-mask-Inverted -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-eGFP-mask-Inverted -"+fname);
 
 
 //save all original channels
 selectWindow("S1-Aligned-");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Square -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-Square -"+fname);
 
 selectWindow("Tau13 -");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13 -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-Tau13 -"+fname);
 
 selectWindow("eGFP -");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-eGFP -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-eGFP -"+fname);
 
 //save tau channel after multiplication
 selectWindow("Tau-GFP-subtract");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13-eGFP - subtraction -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-Tau13-eGFP - subtraction -"+fname);
 
 selectWindow("Tau13-eGFP -");
-saveAs("Tiff", "/Users/chiarapanzi/Library/CloudStorage/OneDrive-UniversityCollegeLondon/PhD_UCL IoN-UKDRI/Analysis/In vivo/Images analysed_/1-Tau13-eGFP -"+fname);
+saveAs("Tiff", "/.../Analysis/In vivo/Images analysed_/n-Tau13-eGFP -"+fname);
 
 
 run("Close All");
