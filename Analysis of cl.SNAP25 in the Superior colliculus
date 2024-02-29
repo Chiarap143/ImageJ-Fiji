@@ -1,0 +1,67 @@
+// Macro to analyse the intensity of clSNAP25 inside its area (as I did for the GFP intensity)
+
+
+//Open the "Square" file/image that was saved with the analysis of the superior colliculus
+
+
+fname = File.name;
+
+run("Misc...", "divide=0.0");
+setOption("BlackBackground", true);
+setOption("DebugMode", true);
+run("Misc...", "divide=0.0");
+//run("Clear Results");
+
+
+//rename("Original");
+
+
+run("Select All");
+roiManager("add");
+run("Measure");
+roiManager("Delete");
+
+//Check in which channel clSNAP25 is and modify the number accordingly 
+run("Duplicate...", "duplicate channels=3");
+rename("clSNAP25 -");
+
+//create mask for clSNAP25 channel (C3 or C4) --> CHECK
+selectWindow("clSNAP25 -");
+run("Duplicate...", "duplicate");
+run("Auto Threshold", "method=Otsu white show stack");
+rename("clSNAP25-mask");
+
+
+selectWindow("clSNAP25 -");
+
+run("Duplicate...", "duplicate");
+rename("clSNAP25-area");
+
+selectWindow("clSNAP25-mask");
+for (n = 1; n <= nSlices; n++) {
+    	setSlice(n);
+    	run("Create Selection");
+    	run("Enlarge...", "enlarge=1 pixel");
+    
+    	roiManager("add");   
+    	run("Fill", "slice");
+	}
+roiManager("Deselect");
+selectWindow("clSNAP25-area");
+roiManager("Measure");
+
+
+roiManager("Delete");
+
+
+
+selectWindow("clSNAP25-mask");
+saveAs("Tiff", "/..../Analysis/In vivo/Images analysed_/clSNAP25-mask -"+fname);
+
+
+//save original channel
+
+selectWindow("clSNAP25 -");
+saveAs("Tiff", "/..../Analysis/In vivo/Images analysed_/clSNAP25 -"+fname);
+
+run("Close All");
